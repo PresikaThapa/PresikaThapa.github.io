@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flood Early Warning System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef6f8;
+            text-align: center;
+            padding: 40px;
+        }
+        .dashboard {
+            background: white;
+            max-width: 600px;
+            margin: auto;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        h1 { margin-bottom: 10px; }
+        .water-level {
+            font-size: 60px;
+            font-weight: bold;
+            margin: 30px 0;
+        }
+        .status {
+            font-size: 28px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px;
+        }
+        .safe { background: #d8f3dc; }
+        .warning { background: #fff3cd; }
+        .danger { background: #f8d7da; }
+        input { width: 80%; }
+        button {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+        .scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        canvas {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            max-width: 100%;
+        }
+        .note {
+            font-size: 13px;
+            color: #555;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <h1>Flood Early Warning System</h1>
+    <p>Presika Thapa — Student Research Prototype — simulated data</p>
+
+    <h2>Current Water Level</h2>
+    <div class="water-level">
+        <span id="waterLevel">25</span> cm
+    </div>
+
+    <input type="range" id="waterSlider" min="0" max="100" value="25">
+
+    <button id="simulateButton">Simulate Rising Water</button>
+
+    <div class="scale">
+        <span>0 cm</span>
+        <span>50 cm</span>
+        <span>100 cm</span>
+    </div>
+
+    <div id="status" class="status safe">SAFE</div>
+    <p id="message">Water level is currently within the demonstration safe range.</p>
+
+    <canvas id="graph" width="500" height="250"></canvas>
+
+    <p class="note">
+        Educational simulation only. Thresholds are demonstration values,
+        not official flood-warning levels.
+    </p>
+</div>
+
+<script>
+    let levels = [25];
+    let simulation = null;
+
+    const slider = document.getElementById("waterSlider");
+    const waterLevel = document.getElementById("waterLevel");
+    const status = document.getElementById("status");
+    const message = document.getElementById("message");
+    const button = document.getElementById("simulateButton");
+
+    const canvas = document.getElementById("graph");
+    const ctx = canvas.getContext("2d");
+
+    function checkWater() {
+        const water = Number(slider.value);
+        waterLevel.textContent = water;
+
+        levels.push(water);
+        if (levels.length > 25) levels.shift();
+
+        updateStatus(water);
+        drawGraph();
+    }
+
+    function updateStatus(water) {
+        if (water < 40) {
+            status.textContent = "SAFE";
+            status.className = "status safe";
+            message.textContent =
+                "Water level is currently within the demonstration safe range.";
+        } else if (water < 60) {
+            status.textContent = "WARNING";
+            status.className = "status warning";
+            message.textContent =
+                "Water level is rising. Monitoring is recommended.";
+        } else {
+            status.textContent = "DANGER";
+            status.className = "status danger";
+            message.textContent =
+                "Demonstration danger threshold reached. Immediate attention would be required in a real system.";
+        }
+    }
+
+    function drawGraph() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.beginPath();
+
+        for (let i = 0; i < levels.length; i++) {
+            const x = i * (canvas.width / 24);
+            const y = canvas.height - (levels[i] / 100) * canvas.height;
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+
+        ctx.stroke();
+
+        // Draw threshold guides for the simulation.
+        ctx.setLineDash([5, 5]);
+
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 0.40 * canvas.height);
+        ctx.lineTo(canvas.width, canvas.height - 0.40 * canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 0.60 * canvas.height);
+        ctx.lineTo(canvas.width, canvas.height - 0.60 * canvas.height);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    }
+
+    function startSimulation() {
+        clearInterval(simulation);
+        levels = [];
+        let water = 20;
+
+        simulation = setInterval(() => {
+            water += 5;
+
+            if (water > 100) {
+                clearInterval(simulation);
+                return;
+            }
+
+            slider.value = water;
+            checkWater();
+        }, 700);
+    }
+
+    slider.addEventListener("input", checkWater);
+    button.addEventListener("click", startSimulation);
+
+    updateStatus(25);
+    drawGraph();
+</script>
+</body>
+</html>
